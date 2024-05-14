@@ -89,6 +89,7 @@ class QrisJatimController extends Controller
         ]);
 
         try{
+
             $validator->validate();
             $data = new QrisJatimPaymentRequest($request->all());
             $result = new QrisJatimPaymentResponse($request->all());

@@ -22,8 +22,11 @@ $helper = App::make('App\Helpers\Helper');
 //     return view('welcome');
 // });
 
-Route::group(['prefix' => 'qris'], function () {
+Route::group(['prefix' => 'bankjatim'], function () {
     Route::post('/generate-qris-jatim', 'App\Http\Controllers\Qris\v1\QrisJatimController@GenerateQris');
     Route::post('/check-status-qris-jatim', 'App\Http\Controllers\Qris\v1\QrisJatimController@CheckStatusQris');
     Route::post('/PaymentQr', 'App\Http\Controllers\Qris\v1\QrisJatimController@PaymentQris');
+
+    Route::post('/virtual-account-full', 'App\Http\Controllers\Va\v1\VirtualAccountController@CreateVirtualAccountFull');
+    Route::post('/callback-va', 'App\Http\Controllers\Va\v1\VirtualAccountController@CallbackVa');
 });
