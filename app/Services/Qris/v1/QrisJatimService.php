@@ -31,15 +31,15 @@ class QrisJatimService
             'base_uri' => $this->settings['apiUrl'],
             'headers' => $this->defaultHeaders,
         ];
-
         $this->client = new Client($configs);
     }
 
     public function generateApiQris($data)
     {
+        $aa= "";
         try {
             $request = $this->client->post('/MC/Qris/Dynamic', [
-                'json' => $data
+                'json' => $aa
             ]);
             $response = json_decode($request->getBody()->getContents());
         } catch (RequestException $e) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Va\v1;
 use App\Http\Controllers\Controller;
 use App\Models\Va\v1\VirtualAccountJatimRequest;
 use App\Models\Va\v1\VirtualAccountJatimResponse;
+use App\Services\Va\v1\VirtualAccountJatimService;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 
@@ -56,7 +57,7 @@ class VirtualAccountController extends Controller
         ]);
     }
 
-    public function CallbackVa(Request $request)
+    public function CallbackVa(VirtualAccountJatimService $virtualAccountJatimService, Request $request)
     {
         $validator = validator($request->all(), [
             'VirtualAccount' => ['required', 'string', 'max:16'],
@@ -73,10 +74,13 @@ class VirtualAccountController extends Controller
         ]);
 
         try{
-            $validator->validate();
+//            $validator->validate();
             $data = new VirtualAccountJatimRequest($request->all());
             $result = new VirtualAccountJatimResponse($request->all());
 
+//            $proses = $virtualAccountJatimService->updatePayment($data, $result);
+
+//            $response = $proses->toArray();
             $response = $result->toArray();
             return response()->json($response, 200);
         } catch (ValidationException $e) {

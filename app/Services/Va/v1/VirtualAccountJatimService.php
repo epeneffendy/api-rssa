@@ -9,6 +9,9 @@
 namespace App\Services\Va\v1;
 
 
+use App\Models\PaymentVirtualAccount;
+use App\Models\Va\v1\VirtualAccountJatimRequest;
+use App\Models\Va\v1\VirtualAccountJatimResponse;
 use GuzzleHttp\Client;
 
 class VirtualAccountJatimService
@@ -37,5 +40,56 @@ class VirtualAccountJatimService
         ];
 
         $this->client = new Client($configs);
+    }
+
+    public function updatePayment(VirtualAccountJatimRequest $data, VirtualAccountJatimResponse $result)
+    {
+
+        $pembayaran = PaymentVirtualAccount::where('virtual_account', $data->getVirtualAccount())->first();
+        if (!$pembayaran) {
+            $result->setStatus(array(
+                "IsError" => "True",
+                "ResponseCode" => "01",
+                "ErrorDesc" => "Virtual Account Tidak Ditemukan!"
+            ));
+        } else {
+            if ($pembayaran->flags_lunas == "F") {
+                $result->setStatus(array(
+                    "IsError" => "True",
+                    "ResponseCode" => "01",
+                    "ErrorDesc" => "Tagihan anda telah lunas!"
+                ));
+            } else {
+                if ($pembayaran->endpoint == "full") {
+                    $pembayaran->bayar = $data->getAmount();
+                    $pembayaran->flags_lunas = "F";
+                    $pembayaran->save();
+                } else {
+                    if ($data->getAmount() > $pembayaran->totalamount) {
+                        $result->setStatus(array(
+                            "IsError" => "True",
+                            "ResponseCode" => "01",
+                            "ErrorDesc" => "Nominal bayar melebihi jumlah tagihan!"
+                        ));
+                    } else {
+                        $sisa = $pembayaran->totalamount - $pembayaran->bayar;
+                        if ($data->getAmount() > $sisa) {
+                            $result->setStatus(array(
+                                "IsError" => "True",
+                                "ResponseCode" => "01",
+                                "ErrorDesc" => "Nominal bayar melebihi sisa jumlah tagihan!"
+                            ));
+                        } else {
+                            $pembayaran->bayar = $pembayaran->bayar + $data->getAmount();
+                            $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
+                            $pembayaran->save();
+                        }
+                    }
+                }
+            }
+
+        }
+        return $result;
+
     }
 }
