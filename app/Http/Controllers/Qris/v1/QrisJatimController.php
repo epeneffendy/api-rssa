@@ -72,7 +72,7 @@ class QrisJatimController extends Controller
         }
     }
 
-    public function PaymentQris(Request $request){
+    public function PaymentQris(Request $request, QrisJatimService $qrisJatimService){
         $validator = validator($request->all(), [
             'billNumber' => ['required', 'string', 'max:20'],
             'purposetrx' => ['required', 'string', 'max:28'],
@@ -94,7 +94,8 @@ class QrisJatimController extends Controller
             $data = new QrisJatimPaymentRequest($request->all());
             $result = new QrisJatimPaymentResponse($request->all());
 
-            $response = $result->toArray();
+            $proses = $qrisJatimService->updateQris($data, $result);
+            $response = $proses->toArray();
             return response()->json($response, 200);
         } catch (ValidationException $e) {
             dd($e);

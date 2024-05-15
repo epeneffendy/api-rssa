@@ -2,10 +2,11 @@
 
 namespace App\Services\Qris\v1;
 
-use Carbon\Carbon;
+use App\Models\PaymentBank;
+use App\Models\Qris\v1\QrisJatimPaymentRequest;
+use App\Models\Qris\v1\QrisJatimPaymentResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\HandlerStack;
 
 class QrisJatimService
 {
@@ -36,7 +37,7 @@ class QrisJatimService
 
     public function generateApiQris($data)
     {
-        $aa= "";
+        $aa = "";
         try {
             $request = $this->client->post('/MC/Qris/Dynamic', [
                 'json' => $aa
@@ -54,15 +55,35 @@ class QrisJatimService
 
     public function checkStatusQrisPayment($data)
     {
-        try{
+        try {
             $request = $this->client->post('/MC/PaymentQr', [
                 'json' => $data
             ]);
             $response = json_decode($request->getBody()->getContents());
-        }catch (RequestException $e){
+        } catch (RequestException $e) {
             $response = json_decode($e->getResponse()->getBody()->getContents());
         }
 
         return $response;
+    }
+
+    public function updateQris(QrisJatimPaymentRequest $data, QrisJatimPaymentResponse $result)
+    {
+        $pembayaran = PaymentBank::where('invoice_number', $data->getinvoice_number())->first();
+
+            if (!$pembayaran){
+                $result->setresponsCode("01");
+                $result->setresponsDesc("Data Pembayaran Qris tidak ditemukan!");
+            }else{
+                if ($pembayaran->payment_status == 1) {
+                    $pembayaran->payment_status = 2;
+                    $pembayaran->save();
+                }else{
+                    $result->setresponsCode("01");
+                    $result->setresponsDesc("Data Pembayaran Qris telah terkonfirmasi!");
+                }
+            }
+
+        return $result;
     }
 }

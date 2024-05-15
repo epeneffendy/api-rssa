@@ -78,10 +78,8 @@ class VirtualAccountController extends Controller
             $data = new VirtualAccountJatimRequest($request->all());
             $result = new VirtualAccountJatimResponse($request->all());
 
-//            $proses = $virtualAccountJatimService->updatePayment($data, $result);
-
-//            $response = $proses->toArray();
-            $response = $result->toArray();
+            $proses = $virtualAccountJatimService->updatePayment($data, $result);
+            $response = $proses->toArray();
             return response()->json($response, 200);
         } catch (ValidationException $e) {
             dd($e);

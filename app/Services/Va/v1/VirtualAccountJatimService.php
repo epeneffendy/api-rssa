@@ -10,6 +10,7 @@ namespace App\Services\Va\v1;
 
 
 use App\Models\PaymentVirtualAccount;
+use App\Models\PaymentVirtualAccountDetail;
 use App\Models\Va\v1\VirtualAccountJatimRequest;
 use App\Models\Va\v1\VirtualAccountJatimResponse;
 use GuzzleHttp\Client;
@@ -83,6 +84,14 @@ class VirtualAccountJatimService
                             $pembayaran->bayar = $pembayaran->bayar + $data->getAmount();
                             $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
                             $pembayaran->save();
+
+                            //insert history pembayaran partial
+                            $detail = new PaymentVirtualAccountDetail();
+                            $detail->payment_virtualaccount_id = $pembayaran->id;
+                            $detail->nomr = $pembayaran->nomr;
+                            $detail->idxdaftar = $pembayaran->idxdaftar;
+                            $detail->bayar = $data->getAmount();
+                            $detail->save();
                         }
                     }
                 }
