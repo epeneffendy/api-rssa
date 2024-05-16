@@ -91,6 +91,7 @@ class VirtualAccountJatimService
                             $detail->nomr = $pembayaran->nomr;
                             $detail->idxdaftar = $pembayaran->idxdaftar;
                             $detail->bayar = $data->getAmount();
+                            $detail->sisabayar = $sisa;
                             $detail->save();
                         }
                     }
