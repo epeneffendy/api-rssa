@@ -14,6 +14,7 @@ use App\Models\PaymentVirtualAccountDetail;
 use App\Models\Va\v1\VirtualAccountJatimRequest;
 use App\Models\Va\v1\VirtualAccountJatimResponse;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\DB;
 
 class VirtualAccountJatimService
 {
@@ -45,60 +46,73 @@ class VirtualAccountJatimService
 
     public function updatePayment(VirtualAccountJatimRequest $data, VirtualAccountJatimResponse $result)
     {
-
-        $pembayaran = PaymentVirtualAccount::where('virtual_account', $data->getVirtualAccount())->first();
-        if (!$pembayaran) {
-            $result->setStatus(array(
-                "IsError" => "True",
-                "ResponseCode" => "01",
-                "ErrorDesc" => "Virtual Account Tidak Ditemukan!"
-            ));
-        } else {
-            if ($pembayaran->flags_lunas == "F") {
+        DB::beginTransaction();
+        try{
+            $pembayaran = PaymentVirtualAccount::where('virtual_account', $data->getVirtualAccount())->first();
+            if (!$pembayaran) {
                 $result->setStatus(array(
                     "IsError" => "True",
                     "ResponseCode" => "01",
-                    "ErrorDesc" => "Tagihan anda telah lunas!"
+                    "ErrorDesc" => "Virtual Account Tidak Ditemukan!"
                 ));
             } else {
-                if ($pembayaran->endpoint == "full") {
-                    $pembayaran->bayar = $data->getAmount();
-                    $pembayaran->flags_lunas = "F";
-                    $pembayaran->save();
+                if ($pembayaran->flags_lunas == "F") {
+                    $result->setStatus(array(
+                        "IsError" => "True",
+                        "ResponseCode" => "01",
+                        "ErrorDesc" => "Tagihan anda telah lunas!"
+                    ));
                 } else {
-                    if ($data->getAmount() > $pembayaran->totalamount) {
-                        $result->setStatus(array(
-                            "IsError" => "True",
-                            "ResponseCode" => "01",
-                            "ErrorDesc" => "Nominal bayar melebihi jumlah tagihan!"
-                        ));
+                    if ($pembayaran->endpoint == "full") {
+                        $pembayaran->bayar = $data->getAmount();
+                        $pembayaran->flags_lunas = "F";
+                        $pembayaran->save();
                     } else {
-                        $sisa = $pembayaran->totalamount - $pembayaran->bayar;
-                        if ($data->getAmount() > $sisa) {
+                        if ($data->getAmount() > $pembayaran->totalamount) {
                             $result->setStatus(array(
                                 "IsError" => "True",
                                 "ResponseCode" => "01",
-                                "ErrorDesc" => "Nominal bayar melebihi sisa jumlah tagihan!"
+                                "ErrorDesc" => "Nominal bayar melebihi jumlah tagihan!"
                             ));
                         } else {
-                            $pembayaran->bayar = $pembayaran->bayar + $data->getAmount();
-                            $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
-                            $pembayaran->save();
+                            $sisa = $pembayaran->totalamount - $pembayaran->bayar;
+                            if ($data->getAmount() > $sisa) {
+                                $result->setStatus(array(
+                                    "IsError" => "True",
+                                    "ResponseCode" => "01",
+                                    "ErrorDesc" => "Nominal bayar melebihi sisa jumlah tagihan!"
+                                ));
+                            } else {
 
-                            //insert history pembayaran partial
-                            $detail = new PaymentVirtualAccountDetail();
-                            $detail->payment_virtualaccount_id = $pembayaran->id;
-                            $detail->nomr = $pembayaran->nomr;
-                            $detail->idxdaftar = $pembayaran->idxdaftar;
-                            $detail->bayar = $data->getAmount();
-                            $detail->sisabayar = $sisa;
-                            $detail->save();
+                                $pembayaran->bayar = $pembayaran->bayar + $data->getAmount();
+                                $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
+                                $pembayaran->save();
+
+                                if (empty($pembayaran->bayar)){
+                                    $detail_sisa = $pembayaran->totalamount - $data->getAmount();
+                                }else{
+                                    $detail_sisa = $pembayaran->totalamount - $pembayaran->bayar;
+                                }
+
+                                //insert history pembayaran partial
+                                $detail = new PaymentVirtualAccountDetail();
+                                $detail->payment_virtualaccount_id = $pembayaran->id;
+                                $detail->nomr = $pembayaran->nomr;
+                                $detail->idxdaftar = $pembayaran->idxdaftar;
+                                $detail->bayar = $data->getAmount();
+                                $detail->sisabayar = $detail_sisa;
+                                $detail->save();
+                            }
                         }
                     }
                 }
-            }
 
+            }
+            DB::commit();
+        }catch (\Exception $e){
+            DB::rollback();
         }
+
         return $result;
 
     }
