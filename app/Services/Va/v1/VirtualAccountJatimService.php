@@ -9,6 +9,7 @@
 namespace App\Services\Va\v1;
 
 
+use App\Models\PaymentJatimLogs;
 use App\Models\PaymentVirtualAccount;
 use App\Models\PaymentVirtualAccountDetail;
 use App\Models\Va\v1\VirtualAccountJatimRequest;
@@ -112,8 +113,17 @@ class VirtualAccountJatimService
         }catch (\Exception $e){
             DB::rollback();
         }
-
         return $result;
 
+    }
+
+    public function log($type, $request, $response)
+    {
+        $log = PaymentJatimLogs::create([
+            'type' => $type,
+            'request' => json_encode($request),
+            'response' => json_encode($response),
+        ]);
+        return $log;
     }
 }

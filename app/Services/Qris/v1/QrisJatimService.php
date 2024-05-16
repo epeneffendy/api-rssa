@@ -3,6 +3,7 @@
 namespace App\Services\Qris\v1;
 
 use App\Models\PaymentBank;
+use App\Models\PaymentJatimLogs;
 use App\Models\Qris\v1\QrisJatimPaymentRequest;
 use App\Models\Qris\v1\QrisJatimPaymentResponse;
 use GuzzleHttp\Client;
@@ -85,5 +86,15 @@ class QrisJatimService
             }
 
         return $result;
+    }
+
+    public function log($type, $request, $response)
+    {
+        $log = PaymentJatimLogs::create([
+            'type' => $type,
+            'request' => json_encode($request),
+            'response' => json_encode($response),
+        ]);
+        return $log;
     }
 }

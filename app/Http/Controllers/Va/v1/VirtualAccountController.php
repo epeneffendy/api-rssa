@@ -31,7 +31,7 @@ class VirtualAccountController extends Controller
         );
     }
 
-    public function CreateVirtualAccountFull( Request $request)
+    public function CreateVirtualAccountFull(Request $request)
     {
         $validator = validator($request->all(), [
             'VirtualAccount' => ['required', 'string', 'max:16'],
@@ -63,7 +63,7 @@ class VirtualAccountController extends Controller
             'VirtualAccount' => ['required', 'string', 'max:16'],
             'Nama' => ['required', 'string', 'max:100'],
             'Amount' => ['required', 'numeric'],
-            'References' => ['required', 'string','max:50'],
+            'References' => ['required', 'string', 'max:50'],
             'Tanggal' => ['required', 'date_format:Y-m-d H:i:s'],
         ], [], [
             'VirtualAccount' => 'Virtual Account',
@@ -73,13 +73,15 @@ class VirtualAccountController extends Controller
             'Tanggal' => 'Tanggal',
         ]);
 
-        try{
+        try {
 //            $validator->validate();
             $data = new VirtualAccountJatimRequest($request->all());
             $result = new VirtualAccountJatimResponse($request->all());
 
             $proses = $virtualAccountJatimService->updatePayment($data, $result);
             $response = $proses->toArray();
+
+            $virtualAccountJatimService->log('bankjatim/callback-va', $data->toArray(), $proses->toArray());
             return response()->json($response, 200);
         } catch (ValidationException $e) {
             dd($e);

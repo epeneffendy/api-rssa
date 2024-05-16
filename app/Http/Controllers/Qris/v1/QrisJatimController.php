@@ -96,6 +96,8 @@ class QrisJatimController extends Controller
 
             $proses = $qrisJatimService->updateQris($data, $result);
             $response = $proses->toArray();
+
+            $qrisJatimService->log('bankjatim/PaymentQr', $data->toArray(), $proses->toArray());
             return response()->json($response, 200);
         } catch (ValidationException $e) {
             dd($e);
