@@ -22,39 +22,30 @@ class ListPemeriksaanService
             ->where(DB::raw("(convert(date,Result.TestEndDate))"), "=", $data->gettgl_order())
             ->orderBy('Result.TestEndDate', 'DESC')
             ->orderBy('Patient.Lab_PatientID', 'DESC')
-            ->limit(10)
             ->get();
 
         if (count($list_pemeriksaan) > 0) {
             $result->setcountData(count($list_pemeriksaan));
-            $aa = [];
-
+            $data = [];
             foreach ($list_pemeriksaan as $ind => $item) {
-                dd($item);
-                $aa = array(
-                    "pasien_id" => $item->pasien_id,
-                    "pasien_norm" => $item->pasien_norm,
-                    "pasien_ruangan" => $item->pasien_ruangan,
-                    "pasien_last_up_date" => $item->pasien_last_up_date,
-                    "result_id" => $item->result_id,
-                    "result_test_name" => $item->result_test_name,
-                    "result_value" => $item->result_value,
-                    "result_unit" => $item->result_unit,
-                    "result_normal_flag" => $item->result_normal_flag,
-                    "result_speciment_date" => $item->result_speciment_date,
-                    "operator_first_name" => $item->operator_first_name,
-                    "operator_last_name" => $item->operator_last_name,
-                );
-//                $result->setresponseData(array(
-//
-//                ));
+                $data[$ind]['pasien_id'] = $item->pasien_id;
+                $data[$ind]['pasien_norm'] = $item->pasien_norm;
+                $data[$ind]['pasien_ruangan'] = $item->pasien_ruangan;
+                $data[$ind]['pasien_last_up_date'] = $item->pasien_last_up_date;
+                $data[$ind]['result_id'] = $item->result_id;
+                $data[$ind]['result_test_name'] = $item->result_test_name;
+                $data[$ind]['result_value'] = $item->result_value;
+                $data[$ind]['result_unit'] = $item->result_unit;
+                $data[$ind]['result_normal_flag'] = $item->result_normal_flag;
+                $data[$ind]['result_speciment_date'] = $item->result_speciment_date;
+                $data[$ind]['operator_first_name'] = $item->operator_first_name;
+                $data[$ind]['operator_last_name'] = $item->operator_last_name;
             }
-//            $result->setresponseData($aa);
-        }else{
+            $result->setresponseData($data);
+        } else {
             $result->setresponseCode("01");
             $result->setresponseMessage("Data Pemeriksaan Tidak Ditemukan!");
         }
-dd($aa);
-        dd($result);
+        return $result;
     }
 }

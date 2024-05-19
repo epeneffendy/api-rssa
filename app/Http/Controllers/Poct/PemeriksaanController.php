@@ -20,14 +20,15 @@ class PemeriksaanController extends Controller
             'tgl_order' => 'Tgl Order',
         ]);
 
-        try{
+        try {
             $validator->validate();
             $data = new ListPemeriksaanRequest($request->all());
             $result = new ListPemeriksaanResponse($request->all());
 
             $proses = $listPemeriksaanService->fetchPemeriksaan($data, $result);
-
-        }catch (\Exception $e){
+            $response = $proses->toArray();
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
             dd($e->getMessage());
         }
     }
