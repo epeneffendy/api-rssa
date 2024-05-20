@@ -33,4 +33,5 @@ Route::group(['prefix' => 'bankjatim'], function () {
 
 Route::group(['prefix' => 'poct'], function () {
     Route::post('/list-pemeriksaan', 'App\Http\Controllers\Poct\PemeriksaanController@ListPemeriksaan');
+    Route::post('/rekap-pemeriksaan', 'App\Http\Controllers\Poct\PemeriksaanController@RekapPemeriksaan');
 });

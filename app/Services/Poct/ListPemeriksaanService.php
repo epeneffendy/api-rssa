@@ -9,20 +9,36 @@ use Illuminate\Support\Facades\DB;
 
 class ListPemeriksaanService
 {
-    public function fetchPemeriksaan(ListPemeriksaanRequest $data, ListPemeriksaanResponse $result)
+    public function fetchPemeriksaan(ListPemeriksaanRequest $data, ListPemeriksaanResponse $result, $flag)
     {
-        $list_pemeriksaan = DB::connection('sqlsrv')->table('Patient')
-            ->select('Patient.ID as pasien_id', 'Patient.Lab_PatientID as pasien_norm', 'Patient.Location as pasien_ruangan', 'Patient.lastUpdDatetime as pasien_last_up_date', 'Result.ID as result_id',
-                'Result.UnivTestName as result_test_name', 'Result.RValue as result_value', 'Result.Unit as result_unit', 'Result.ANormalFlag as result_normal_flag',
-                'Result.TestEndDate as result_speciment_date', 'Operator.FirstName as operator_first_name', 'Operator.LastName as operator_last_name')
-            ->leftJoin('Result', 'Result._PID', '=', 'Patient.ID')
-            ->leftJoin('Operator', 'Operator.OperatorID', '=', 'Result.OperatiorID')
-            ->whereNotNull('Result.RValue')
-            ->whereRaw('LEN(Patient.Lab_PatientID) >= 10')
-            ->where(DB::raw("(convert(date,Result.TestEndDate))"), "=", $data->gettgl_order())
-            ->orderBy('Result.TestEndDate', 'DESC')
-            ->orderBy('Patient.Lab_PatientID', 'DESC')
-            ->get();
+        if ($flag == 'list') {
+            $list_pemeriksaan = DB::connection('sqlsrv')->table('Patient')
+                ->select('Patient.ID as pasien_id', 'Patient.Lab_PatientID as pasien_norm', 'Patient.Location as pasien_ruangan', 'Patient.lastUpdDatetime as pasien_last_up_date', 'Result.ID as result_id',
+                    'Result.UnivTestName as result_test_name', 'Result.RValue as result_value', 'Result.Unit as result_unit', 'Result.ANormalFlag as result_normal_flag',
+                    'Result.TestEndDate as result_speciment_date', 'Operator.FirstName as operator_first_name', 'Operator.LastName as operator_last_name')
+                ->leftJoin('Result', 'Result._PID', '=', 'Patient.ID')
+                ->leftJoin('Operator', 'Operator.OperatorID', '=', 'Result.OperatiorID')
+                ->whereNotNull('Result.RValue')
+                ->whereRaw('LEN(Patient.Lab_PatientID) >= 10')
+                ->where(DB::raw("(convert(date,Result.TestEndDate))"), "=", $data->gettgl_order())
+                ->orderBy('Result.TestEndDate', 'DESC')
+                ->orderBy('Patient.Lab_PatientID', 'DESC')
+                ->get();
+        } else {
+            $list_pemeriksaan = DB::connection('sqlsrv')->table('Patient')
+                ->select('Patient.ID as pasien_id', 'Patient.Lab_PatientID as pasien_norm', 'Patient.Location as pasien_ruangan', 'Patient.lastUpdDatetime as pasien_last_up_date', 'Result.ID as result_id',
+                    'Result.UnivTestName as result_test_name', 'Result.RValue as result_value', 'Result.Unit as result_unit', 'Result.ANormalFlag as result_normal_flag',
+                    'Result.TestEndDate as result_speciment_date', 'Operator.FirstName as operator_first_name', 'Operator.LastName as operator_last_name')
+                ->leftJoin('Result', 'Result._PID', '=', 'Patient.ID')
+                ->leftJoin('Operator', 'Operator.OperatorID', '=', 'Result.OperatiorID')
+                ->whereNotNull('Result.RValue')
+                ->whereRaw('LEN(Patient.Lab_PatientID) >= 10')
+                ->where(DB::raw("(convert(date,Result.TestEndDate))"), ">=", $data->gettgl_awal())
+                ->where(DB::raw("(convert(date,Result.TestEndDate))"), "<=", $data->gettgl_akhir())
+                ->orderBy('Result.TestEndDate', 'DESC')
+                ->orderBy('Patient.Lab_PatientID', 'DESC')
+                ->get();
+        }
 
         if (count($list_pemeriksaan) > 0) {
             $result->setcountData(count($list_pemeriksaan));

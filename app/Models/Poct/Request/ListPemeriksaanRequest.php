@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class ListPemeriksaanRequest extends \stdClass
 {
-    private $norm ="";
     private $tgl_order = "";
+    private $tgl_awal = "";
+    private $tgl_akhir = "";
 
     public function __construct($response)
     {
@@ -32,16 +33,6 @@ class ListPemeriksaanRequest extends \stdClass
         return $response;
     }
 
-    public function getnorm()
-    {
-        return $this->norm;
-    }
-
-    public function setnorm($norm): void
-    {
-        $this->norm = $norm;
-    }
-
     public function gettgl_order()
     {
         return $this->tgl_order;
@@ -50,6 +41,26 @@ class ListPemeriksaanRequest extends \stdClass
     public function settgl_order($tgl_order): void
     {
         $this->tgl_order = $tgl_order;
+    }
+
+    public function gettgl_awal()
+    {
+        return $this->tgl_awal;
+    }
+
+    public function settgl_akhir($tgl_akhir): void
+    {
+        $this->tgl_akhir  = $tgl_akhir;
+    }
+
+    public function gettgl_akhir()
+    {
+        return $this->tgl_akhir;
+    }
+
+    public function settgl_awal($tgl_awal): void
+    {
+        $this->tgl_awal = $tgl_awal;
     }
 
 }
