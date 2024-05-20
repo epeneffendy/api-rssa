@@ -28,19 +28,25 @@ class PemeriksaanController extends Controller
             $signarture = $request->header('x-signature');
             $token = $request->header('authorization');
 
-            if (!empty($timestamp) && !empty($signarture)) {
-                $verif_signarture = $this->generateSignature($token, $timestamp);
-                if ($verif_signarture == $signarture) {
-                    $proses = $listPemeriksaanService->fetchPemeriksaan($data, $result, 'list');
-                    $response = $proses->toArray();
-                } else {
+            if (!empty($timestamp) && !empty($signarture) && !empty($token)) {
+                if ($token == env('PEC_TOKEN')){
+                    $verif_signarture = $this->generateSignature($token, $timestamp);
+                    if ($verif_signarture == $signarture) {
+                        $proses = $listPemeriksaanService->fetchPemeriksaan($data, $result, 'list');
+                        $response = $proses->toArray();
+                    } else {
+                        $result->setresponseCode("01");
+                        $result->setresponseMessage("Unauthorized X-Signature!");
+                        $response = $result->toArray();
+                    }
+                }else{
                     $result->setresponseCode("01");
-                    $result->setresponseMessage("Unauthorized X-Signature!");
+                    $result->setresponseMessage("Unauthorized Token!");
                     $response = $result->toArray();
                 }
             } else {
                 $result->setresponseCode("01");
-                $result->setresponseMessage("Invalid X-Timestamp or X-Signature!");
+                $result->setresponseMessage("Invalid X-Timestamp or X-Signature or Token!");
                 $response = $result->toArray();
             }
             return response()->json($response, 200);
@@ -71,20 +77,26 @@ class PemeriksaanController extends Controller
             $signarture = $request->header('x-signature');
             $token = $request->header('authorization');
 
-            if (!empty($timestamp) && !empty($signarture)) {
-                $verif_signarture = $this->generateSignature($token, $timestamp);
-                if ($verif_signarture == $signarture) {
-                    $proses = $listPemeriksaanService->fetchPemeriksaan($data, $result, 'rekap');
-                    $response = $proses->toArray();
-                    return response()->json($response, 200);
-                } else {
+            if (!empty($timestamp) && !empty($signarture) && !empty($token)) {
+                if ($token == env('PEC_TOKEN')){
+                    $verif_signarture = $this->generateSignature($token, $timestamp);
+                    if ($verif_signarture == $signarture) {
+                        $proses = $listPemeriksaanService->fetchPemeriksaan($data, $result, 'rekap');
+                        $response = $proses->toArray();
+                        return response()->json($response, 200);
+                    } else {
+                        $result->setresponseCode("01");
+                        $result->setresponseMessage("Unauthorized X-Signature!");
+                        $response = $result->toArray();
+                    }
+                }else{
                     $result->setresponseCode("01");
-                    $result->setresponseMessage("Unauthorized X-Signature!");
+                    $result->setresponseMessage("Unauthorized Token!");
                     $response = $result->toArray();
                 }
             } else {
                 $result->setresponseCode("01");
-                $result->setresponseMessage("Invalid X-Timestamp or X-Signature!");
+                $result->setresponseMessage("Invalid X-Timestamp or X-Signature or Token!");
                 $response = $result->toArray();
             }
             return response()->json($response, 200);
@@ -116,7 +128,7 @@ class PemeriksaanController extends Controller
 
     public function generateSignature($token, $timestamp)
     {
-        $strToString = $token . '_' . $timestamp;
+        $strToString = env('PEC_TOKEN') . '_' . $timestamp;
         $signature = hash('sha256', $strToString);
         return $signature;
     }
