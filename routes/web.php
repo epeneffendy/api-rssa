@@ -34,4 +34,6 @@ Route::group(['prefix' => 'bankjatim'], function () {
 Route::group(['prefix' => 'poct'], function () {
     Route::post('/list-pemeriksaan', 'App\Http\Controllers\Poct\PemeriksaanController@ListPemeriksaan');
     Route::post('/rekap-pemeriksaan', 'App\Http\Controllers\Poct\PemeriksaanController@RekapPemeriksaan');
+    Route::post('/signature', 'App\Http\Controllers\Poct\PemeriksaanController@Signature');
+    Route::get('/token', 'App\Http\Controllers\Poct\PemeriksaanController@Token');
 });
