@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: USER
@@ -8,10 +9,13 @@
 
 namespace App\Services\Va\v1;
 
-
+use App\Models\BayarRanap;
+use App\Models\MaxNomerBayar;
 use App\Models\PaymentJatimLogs;
 use App\Models\PaymentVirtualAccount;
 use App\Models\PaymentVirtualAccountDetail;
+use App\Models\PelunasanPiutang;
+use App\Models\Piutang;
 use App\Models\Va\v1\VirtualAccountJatimRequest;
 use App\Models\Va\v1\VirtualAccountJatimResponse;
 use GuzzleHttp\Client;
@@ -48,7 +52,7 @@ class VirtualAccountJatimService
     public function updatePayment(VirtualAccountJatimRequest $data, VirtualAccountJatimResponse $result)
     {
         DB::beginTransaction();
-        try{
+        try {
             $pembayaran = PaymentVirtualAccount::where('virtual_account', $data->getVirtualAccount())->first();
             if (!$pembayaran) {
                 $result->setStatus(array(
@@ -65,6 +69,54 @@ class VirtualAccountJatimService
                     ));
                 } else {
                     if ($pembayaran->endpoint == "full") {
+                        if ($pembayaran->type == 'piutang') {
+                            $piutang = Piutang::where('nobilling', $pembayaran->billnumber)->get();
+
+                            if (count($piutang) > 0) {
+                                $date_now = date('Y-m-d');
+                                foreach ($piutang as $item) {
+                                    $no_kwitansi = $this->lastNoBayar($item->nip, $date_now, $item->shift);
+
+                                    $pelunasan['id_piutang'] = $item->id_piutang;
+                                    $pelunasan['tgl_pelunasan'] = $date_now;
+                                    $pelunasan['jumlah_piutang'] = $item->jumlah_bayar;
+                                    $pelunasan['jumlah_bayar'] = $item->jumlah_bayar;
+                                    $pelunasan['no_kwitansi'] = $no_kwitansi;
+                                    $pelunasan['tgl_entri'] = $date_now;
+                                    $pelunasan['petugas_entri'] = $item->nip;
+                                    $pelunasan['shift'] = $item->shift;
+                                    $save = PelunasanPiutang::insert($pelunasan);
+                                    //update status lunas di piutang
+                                    $lunas = Piutang::where('id_piutang', $item->id_piutang)->update(['st_piutang' => 'LUNAS']);
+
+                                    $data_piutang = Piutang::where('id_piutang', $item->id_piutang)->first();
+                                    if (!empty($data_piutang)) {
+                                        $payload['lunas'] = 1;
+                                        $payload['status'] = 'LUNAS';
+                                        $payload['jmbayar'] = $item->jumlah_bayar;
+                                        $payload['tglbayar'] = $date_now;
+                                        $payload['jambayar'] = date('H:i:s');
+                                        $payload['nobayar'] = $no_kwitansi;
+                                        $payload['nip'] = $item->nip;
+                                        $payload['shift'] = $item->shift;
+                                        if ($data_piutang['st_billing'] == 'IRNA') {
+                                            $update_bayar = BayarRanap::where('idxbill', $data_piutang->idxbill)->update($payload);
+                                        } else if ($data_piutang['st_billing'] == 'IRNA') {
+                                            $update_bayar = BayarRanap::where('idxbill', $data_piutang->idxbill)->update($payload);
+                                        } else {
+                                            $update_bayar = BayarRanap::where('idxbill', $data_piutang->idxbill)->update($payload);
+                                        }
+
+                                        $arr_max['nomor'] = $no_kwitansi;
+                                        $arr_max['type'] = 'kuitansi';
+                                        $arr_max['petugas'] = $item->nip;
+                                        $arr_max['tanggal'] = $date_now;
+                                        $arr_max['shift'] = $item->shift;
+                                        $update_max = MaxNomerBayar::where(['type' => 'kuitansi', 'petugas' => $item->nip, 'tanggal' => $date_now, 'shift' => $item->shift])->update($arr_max);
+                                    }
+                                }
+                            }
+                        }
                         $pembayaran->bayar = $data->getAmount();
                         $pembayaran->flags_lunas = "F";
                         $pembayaran->save();
@@ -89,9 +141,9 @@ class VirtualAccountJatimService
                                 $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
                                 $pembayaran->save();
 
-                                if (empty($pembayaran->bayar)){
+                                if (empty($pembayaran->bayar)) {
                                     $detail_sisa = $pembayaran->totalamount - $data->getAmount();
-                                }else{
+                                } else {
                                     $detail_sisa = $pembayaran->totalamount - $pembayaran->bayar;
                                 }
 
@@ -107,14 +159,13 @@ class VirtualAccountJatimService
                         }
                     }
                 }
-
             }
             DB::commit();
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
+            dd($e);
             DB::rollback();
         }
         return $result;
-
     }
 
     public function log($type, $request, $response)
@@ -125,5 +176,26 @@ class VirtualAccountJatimService
             'response' => json_encode($response),
         ]);
         return $log;
+    }
+
+    function lastNoBayar($petugas, $tanggal, $shift)
+    {
+        $kwitansi = MaxNomerBayar::where(['type' => 'kwitansi', 'petugas' => $petugas, 'tanggal' => $tanggal, 'shift' => $shift])->first();
+        $pre_no = $lastNoBayar = $xLastNoBayar = null;
+        $pre_no = date('Y');
+        if (isset($kwitansi)) {
+            $lastNoBayar = ((int)$kwitansi->nomor) + 1;
+            $xLastNoBayar = str_pad($lastNoBayar, 7, 0, STR_PAD_LEFT);
+            return $xLastNoBayar;
+        } else {
+            $new_nobayar = '0000001';
+            $payload['nomor'] = $new_nobayar;
+            $payload['type'] = 'kuitansi';
+            $payload['petugas'] = $petugas;
+            $payload['tanggal'] = $tanggal;
+            $payload['shift'] = $shift;
+            $nomor = MaxNomerBayar::insert($payload);
+            return $new_nobayar;
+        }
     }
 }
