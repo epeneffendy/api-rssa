@@ -9,7 +9,10 @@
 
 namespace App\Services\Va\v1;
 
+use App\Models\BayarRajal;
 use App\Models\BayarRanap;
+use App\Models\CloseKasir;
+use App\Models\CloseKasirDetail;
 use App\Models\MaxNomerBayar;
 use App\Models\PaymentJatimLogs;
 use App\Models\PaymentVirtualAccount;
@@ -69,6 +72,10 @@ class VirtualAccountJatimService
                     ));
                 } else {
                     if ($pembayaran->endpoint == "full") {
+                        if ($pembayaran->type == 'closing') {
+                            $closing = $this->closingKasir($pembayaran, $data);
+                        }
+
                         if ($pembayaran->type == 'piutang') {
                             $piutang = Piutang::where('nobilling', $pembayaran->billnumber)->get();
 
@@ -155,6 +162,10 @@ class VirtualAccountJatimService
                                 $detail->bayar = $data->getAmount();
                                 $detail->sisabayar = $detail_sisa;
                                 $detail->save();
+
+                                if ($pembayaran->type == 'closing') {
+                                    $closing = $this->closingKasir($pembayaran, $data);
+                                }
                             }
                         }
                     }
@@ -196,6 +207,23 @@ class VirtualAccountJatimService
             $payload['shift'] = $shift;
             $nomor = MaxNomerBayar::insert($payload);
             return $new_nobayar;
+        }
+    }
+
+    function closingKasir($pembayaran, $data)
+    {
+
+        //cari data closing
+        $closing = CloseKasir::where('virtual_account', $data->getVirtualAccount())->first();
+        if (isset($closing)) {
+            $lunas = CloseKasir::where('virtual_account', $data->getVirtualAccount())->update(['st_bayar_payment' => 'bayar']);
+            $lunas_detail = CloseKasirDetail::where('close_kasir_id', $closing->id)->update(['st_bayar_payment' => 'bayar']);
+
+            if ($closing->billing == 'RAWAT JALAN') {
+                $lunas_billing = BayarRajal::where('virtual_account', $data->getVirtualAccount())->update(['st_bayar_payment' => 'bayar']);
+            } else {
+                $lunas_billing = BayarRanap::where('virtual_account', $data->getVirtualAccount())->update(['st_bayar_payment' => 'bayar']);
+            }
         }
     }
 }
