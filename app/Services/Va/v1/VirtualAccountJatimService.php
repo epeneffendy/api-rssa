@@ -143,7 +143,6 @@ class VirtualAccountJatimService
                                     "ErrorDesc" => "Nominal bayar melebihi sisa jumlah tagihan!"
                                 ));
                             } else {
-
                                 $pembayaran->bayar = $pembayaran->bayar + $data->getAmount();
                                 $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
                                 $pembayaran->save();
