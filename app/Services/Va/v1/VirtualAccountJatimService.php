@@ -126,6 +126,7 @@ class VirtualAccountJatimService
                         }
                         $pembayaran->bayar = $data->getAmount();
                         $pembayaran->flags_lunas = "F";
+                        $pembayaran->tanggal_bayar = date('Y-m-d');
                         $pembayaran->save();
                     } else {
                         if ($data->getAmount() > $pembayaran->totalamount) {
@@ -145,6 +146,7 @@ class VirtualAccountJatimService
                             } else {
                                 $pembayaran->bayar = $pembayaran->bayar + $data->getAmount();
                                 $pembayaran->flags_lunas = ($pembayaran->bayar == $pembayaran->totalamount) ? "F" : "O";
+                                $pembayaran->tanggal_bayar = date('Y-m-d');
                                 $pembayaran->save();
 
                                 if (empty($pembayaran->bayar)) {

@@ -48,10 +48,9 @@ class QrisJatimService
             dd($e);
             $response = json_decode($e->getResponse()->getBody()->getContents());
 
-//            $this->log('va/status', $data, $e->getResponse()->getBody()->getContents());
+            //            $this->log('va/status', $data, $e->getResponse()->getBody()->getContents());
         }
         return $response;
-
     }
 
     public function checkStatusQrisPayment($data)
@@ -72,18 +71,19 @@ class QrisJatimService
     {
         $pembayaran = PaymentBank::where('invoice_number', $data->getinvoice_number())->first();
 
-            if (!$pembayaran){
+        if (!$pembayaran) {
+            $result->setresponsCode("01");
+            $result->setresponsDesc("Data Pembayaran Qris tidak ditemukan!");
+        } else {
+            if ($pembayaran->payment_status == 1) {
+                $pembayaran->payment_status = 2;
+                $pembayaran->tanggal_bayar = date('Y-m-d');
+                $pembayaran->save();
+            } else {
                 $result->setresponsCode("01");
-                $result->setresponsDesc("Data Pembayaran Qris tidak ditemukan!");
-            }else{
-                if ($pembayaran->payment_status == 1) {
-                    $pembayaran->payment_status = 2;
-                    $pembayaran->save();
-                }else{
-                    $result->setresponsCode("01");
-                    $result->setresponsDesc("Data Pembayaran Qris telah terkonfirmasi!");
-                }
+                $result->setresponsDesc("Data Pembayaran Qris telah terkonfirmasi!");
             }
+        }
 
         return $result;
     }
